@@ -579,11 +579,17 @@ const App = (() => {
 
     // Training (delegated)
     $.trainingList.addEventListener('input', (e) => {
-      if (e.target.classList.contains('training-name')     ||
-          e.target.classList.contains('training-provider') ||
-          e.target.classList.contains('training-year')) {
+      const idx = parseInt(e.target.dataset.idx, 10);
+      if (e.target.classList.contains('training-name')) {
+        if (!isNaN(idx)) state.training[idx].name = e.target.value;
         markDirty();
         updateAllBadges();
+      } else if (e.target.classList.contains('training-provider')) {
+        if (!isNaN(idx)) state.training[idx].provider = e.target.value;
+        markDirty();
+      } else if (e.target.classList.contains('training-year')) {
+        if (!isNaN(idx)) state.training[idx].year = e.target.value;
+        markDirty();
       }
     });
 
