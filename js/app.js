@@ -53,6 +53,7 @@ const App = (() => {
       fieldSummary:     document.getElementById('field-summary'),
       fieldRole:        document.getElementById('field-role'),
       fieldYears:       document.getElementById('field-years'),
+      aiSummaryBtn:     document.getElementById('ai-summary-btn'),
       // Panel badges (sidebar nav)
       badgeProjects:    document.getElementById('badge-projects'),
       badgeSkills:      document.getElementById('badge-skills'),
@@ -483,6 +484,38 @@ const App = (() => {
     }
   }
 
+  // ── AI Professional Summary ───────────────────────────────────────────────────
+
+  async function generateAiSummary() {
+    if (!state.current) return;
+
+    const payload = buildPayload();
+    if (!payload.projects.length && !payload.skills.length) {
+      showToast('Select at least one project or skill before generating.', 'warn');
+      return;
+    }
+
+    const btn = $.aiSummaryBtn;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ai-spinner"></span> Generating…';
+
+    try {
+      const result = await API.generateProfessionalSummary(payload);
+      if (!result || !result.success || !result.summary) {
+        throw new Error((result && result.error) || 'AI did not return a summary');
+      }
+      $.fieldSummary.value = result.summary;
+      $.fieldSummary.dispatchEvent(new Event('input', { bubbles: true }));
+      showToast('Professional summary generated.', 'info');
+    } catch (err) {
+      showToast('AI generation failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+
   // ── Event binding ─────────────────────────────────────────────────────────────
 
   function bindEvents() {
@@ -501,6 +534,8 @@ const App = (() => {
     [$.fieldSummary, $.fieldRole, $.fieldYears].forEach((el) => {
       el.addEventListener('input', () => markDirty());
     });
+
+    $.aiSummaryBtn?.addEventListener('click', () => generateAiSummary());
 
     // Project card click — toggle selection without full re-render
     $.projectsTbody.addEventListener('click', (e) => {
