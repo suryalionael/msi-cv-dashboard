@@ -90,7 +90,12 @@
         <!-- Overview tab -->
         <div id="tab-overview" class="tab-pane active">
           <div class="card">
-            <label class="field-label" for="field-summary">Professional summary</label>
+            <div class="field-label-row">
+              <label class="field-label" for="field-summary">Professional summary</label>
+              <button type="button" id="ai-summary-btn" class="ai-btn">
+                <i class="ti ti-sparkles"></i> Generate with AI
+              </button>
+            </div>
             <textarea id="field-summary" rows="3"
               placeholder="Professional summary displayed at the top of the CV…"></textarea>
           </div>

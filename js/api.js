@@ -248,6 +248,16 @@ const API = (() => {
     getJobStatus(jobId) {
       return get('getJobStatus', { jobId });
     },
+
+    /**
+     * Generates an AI-written Professional Summary from the current
+     * employee/role/skills/projects payload (same shape as saveCVData).
+     * @param {Object} payload
+     * @return {Promise<{success: boolean, summary?: string, error?: string}>}
+     */
+    generateProfessionalSummary(payload) {
+      return post('generateProfessionalSummary', payload);
+    },
   };
 
 })();
