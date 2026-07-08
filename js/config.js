@@ -1,6 +1,6 @@
 const CONFIG = {
   // Deployed GAS Web App URL — only place this lives in the entire frontend.
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbz3SyhsrkfMqUXAhPGGwUzQu2DlMRcziRG9NEyc7nOSECksaUUWwBucTdS9D1CDBjdzOw/exec',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbzXINxFwMRi1xzzx9spmUaT8LVO_yCKlQiIJl0H0gbpC26hoOwDPHrG5jDgyZu9ttz2Yg/exec',
 
   // localStorage key under which the stable anonymous userId is stored.
   USER_ID_KEY: 'msi_cv_uid',
