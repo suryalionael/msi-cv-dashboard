@@ -801,7 +801,221 @@ textarea { resize: none; line-height: 1.55; }
 #toast.toast-error   { background: #991b1b; color: #fff; }
 #toast.toast-success { background: #14532d; color: #fff; }
 
-/* ── Misc ───────────────────────────────────────────────────────────────────── */
-.empty-msg { font-size: 13px; color: var(--text-secondary); padding: 16px; text-align: center; }
+/* ── AI Results: Score Card ─────────────────────────────────────────────────── */
+.score-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.score-circle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid currentColor;
+  opacity: 0.2;
+}
+
+.score-circle::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 4px solid currentColor;
+  border-color: currentColor currentColor currentColor transparent;
+  transform: rotate(calc(var(--score-pct, 0) * 3.6deg - 90deg));
+  transition: transform 0.6s ease;
+}
+
+.score-circle .score-unit {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.score-high   { color: #16a34a; background: #f0fdf4; }
+.score-medium { color: #d97706; background: #fffbeb; }
+.score-low    { color: #dc2626; background: #fef2f2; }
+
+.score-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.score-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.score-role {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── AI Results: Explanation ────────────────────────────────────────────────── */
+.explanation-container {
+  margin-top: 8px;
+}
+
+.explanation-container + .explanation-container {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--border);
+}
+
+.explanation-group {
+  margin-bottom: 0;
+}
+
+.explanation-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.explanation-item {
+  font-size: 12.5px;
+  color: var(--text-primary);
+  padding: 3px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.explanation-item i {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.explanation-strength i { color: #16a34a; }
+.explanation-improve i  { color: #d97706; }
+
+/* ── AI Results: Ranking ────────────────────────────────────────────────────── */
+.ranking-section {
+  border-bottom: 0.5px solid var(--border);
+}
+
+.ranking-section:last-child { border-bottom: none; }
+
+.ranking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.ranking-header:hover { color: var(--primary); }
+
+.ranking-header i {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.ranking-header.collapsed i { transform: rotate(-90deg); }
+
+.ranking-body {
+  padding-bottom: 6px;
+}
+
+.ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.ranking-row:last-child { border-bottom: none; }
+
+.ranking-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.ranking-score {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary);
+  min-width: 24px;
+  text-align: right;
+}
+
+.ranking-confidence {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  min-width: 42px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.conf-high   { background: #dcfce7; color: #16a34a; }
+.conf-medium { background: #fef3c7; color: #92400e; }
+.conf-low    { background: #fee2e2; color: #dc2626; }
+
+/* ── AI Results: Chips (missing skills, ATS keywords) ───────────────────────── */
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  background: var(--blue-light);
+  color: var(--blue-dark-text);
+  border: 0.5px solid var(--primary);
+}
+
+/* ── Misc updates ───────────────────────────────────────────────────────────── */
+.optional-label {
+  color: var(--text-med);
+  font-size: 12px;
+}
+
+.field-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 2px 0 6px;
+  line-height: 1.4;
+}
 
 .hidden { display: none !important; }
