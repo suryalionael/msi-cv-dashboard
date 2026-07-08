@@ -11,7 +11,7 @@
 <body>
 
   <div id="config-banner" class="hidden config-banner">
-    GAS_URL is not configured. Open <code>dashboard/js/config.js</code> and set <code>CONFIG.GAS_URL</code>.
+    GAS_URL is not configured. Open <code>js/config.js</code> and set <code>CONFIG.GAS_URL</code>.
   </div>
 
   <div class="app-layout">
@@ -89,16 +89,86 @@
 
         <!-- Overview tab -->
         <div id="tab-overview" class="tab-pane active">
+
+          <!-- Professional Summary + Optimize button -->
           <div class="card">
             <div class="field-label-row">
               <label class="field-label" for="field-summary">Professional summary</label>
               <button type="button" id="ai-summary-btn" class="ai-btn">
-                <i class="ti ti-sparkles"></i> Generate with AI
+                <i class="ti ti-sparkles"></i> Optimize Resume
               </button>
             </div>
             <textarea id="field-summary" rows="3"
               placeholder="Professional summary displayed at the top of the CV…"></textarea>
           </div>
+
+          <!-- AI Optimization Results (shown after optimization) -->
+          <div id="ai-results" class="hidden">
+
+            <!-- Resume Match Score -->
+            <div class="card" id="score-card">
+              <div class="score-card-inner">
+                <div class="score-circle" id="score-circle">
+                  <span id="score-value">0</span>
+                  <span class="score-unit">%</span>
+                </div>
+                <div class="score-info">
+                  <div class="score-label">Resume Match</div>
+                  <div class="score-role" id="score-role"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Explanation -->
+            <div class="card" id="explanation-card">
+              <div class="field-label-row">
+                <span class="field-label">Why this score?</span>
+              </div>
+              <div id="strengths-container" class="explanation-container"></div>
+              <div id="improvements-container" class="explanation-container"></div>
+            </div>
+
+            <!-- Ranking sections (expandable) -->
+            <div class="card" id="rankings-card">
+              <div class="ranking-section" id="experiences-ranking">
+                <div class="ranking-header">
+                  <span>Work Experience</span>
+                  <i class="ti ti-chevron-down"></i>
+                </div>
+                <div class="ranking-body" id="experiences-ranking-body"></div>
+              </div>
+              <div class="ranking-section" id="projects-ranking">
+                <div class="ranking-header">
+                  <span>Projects</span>
+                  <i class="ti ti-chevron-down"></i>
+                </div>
+                <div class="ranking-body" id="projects-ranking-body"></div>
+              </div>
+              <div class="ranking-section" id="skills-ranking">
+                <div class="ranking-header">
+                  <span>Skills</span>
+                  <i class="ti ti-chevron-down"></i>
+                </div>
+                <div class="ranking-body" id="skills-ranking-body"></div>
+              </div>
+            </div>
+
+            <!-- Missing Skills -->
+            <div class="card hidden" id="missing-skills-card">
+              <label class="field-label">Recommended Skills</label>
+              <p class="field-hint">Consider adding these to strengthen your profile:</p>
+              <div id="missing-skills-list" class="chip-container"></div>
+            </div>
+
+            <!-- ATS Keywords -->
+            <div class="card hidden" id="ats-keywords-card">
+              <label class="field-label">Detected ATS Keywords</label>
+              <p class="field-hint">Keywords extracted from the Job Description:</p>
+              <div id="ats-keywords-list" class="chip-container"></div>
+            </div>
+
+          </div><!-- /#ai-results -->
+
           <div class="grid-2col">
             <div class="card mb-0">
               <label class="field-label" for="field-role">Role / Title</label>
@@ -108,6 +178,17 @@
               <label class="field-label" for="field-years">Years of experience</label>
               <input type="number" id="field-years" min="0" max="60" placeholder="e.g. 8">
             </div>
+          </div>
+          <div class="card">
+            <label class="field-label" for="field-target-role">Expected Role <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="field-target-role" placeholder="e.g. Data Engineer, Full Stack Developer, BI Analyst"
+              required>
+            <p class="field-hint">Used by AI to score and optimize resume relevance.</p>
+          </div>
+          <div class="card">
+            <label class="field-label" for="field-job-desc">Job Description <span class="optional-label">(optional)</span></label>
+            <textarea id="field-job-desc" rows="3"
+              placeholder="Paste the job description here to improve ATS matching…"></textarea>
           </div>
         </div>
 

@@ -258,6 +258,16 @@ const API = (() => {
     generateProfessionalSummary(payload) {
       return post('generateProfessionalSummary', payload);
     },
+
+    /**
+     * Optimizes resume via AI: scores experiences/projects/skills,
+     * refines descriptions, generates summary.
+     * @param {Object} payload  {employeeName, expectedRole, jobDescription}
+     * @return {Promise<{success, experiences, projects, skills, professionalSummary}>}
+     */
+    optimizeResume(payload) {
+      return post('optimizeResume', payload);
+    },
   };
 
 })();
