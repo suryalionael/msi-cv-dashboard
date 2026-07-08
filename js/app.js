@@ -53,6 +53,8 @@ const App = (() => {
       fieldSummary:     document.getElementById('field-summary'),
       fieldRole:        document.getElementById('field-role'),
       fieldYears:       document.getElementById('field-years'),
+      fieldTargetRole:  document.getElementById('field-target-role'),
+      fieldJobDesc:     document.getElementById('field-job-desc'),
       aiSummaryBtn:     document.getElementById('ai-summary-btn'),
       // Panel badges (sidebar nav)
       badgeProjects:    document.getElementById('badge-projects'),
@@ -75,6 +77,21 @@ const App = (() => {
       modalMessage:     document.getElementById('modal-message'),
       modalLinks:       document.getElementById('modal-links'),
       modalClose:       document.getElementById('modal-close'),
+      // AI Results
+      aiResults:        document.getElementById('ai-results'),
+      scoreCircle:      document.getElementById('score-circle'),
+      scoreValue:       document.getElementById('score-value'),
+      scoreRole:        document.getElementById('score-role'),
+      strengthsContainer: document.getElementById('strengths-container'),
+      improvementsContainer: document.getElementById('improvements-container'),
+      experiencesRankingBody: document.getElementById('experiences-ranking-body'),
+      projectsRankingBody: document.getElementById('projects-ranking-body'),
+      skillsRankingBody: document.getElementById('skills-ranking-body'),
+      missingSkillsCard: document.getElementById('missing-skills-card'),
+      missingSkillsList: document.getElementById('missing-skills-list'),
+      atsKeywordsCard: document.getElementById('ats-keywords-card'),
+      atsKeywordsList: document.getElementById('ats-keywords-list'),
+      rankingsCard:     document.getElementById('rankings-card'),
     };
   }
 
@@ -134,6 +151,8 @@ const App = (() => {
         summary: data.summary || '',
         role: data.position || '',
         yearsExperience: data.yearsExperience != null ? String(data.yearsExperience) : '',
+        targetRole: '',
+        jobDescription: '',
       };
 
       state.projects = (data.projects || []).map((p) => ({
@@ -176,6 +195,10 @@ const App = (() => {
     $.fieldSummary.value = state.basicInfo.summary;
     $.fieldRole.value    = state.basicInfo.role;
     $.fieldYears.value   = state.basicInfo.yearsExperience;
+    $.fieldTargetRole.value = state.basicInfo.targetRole || '';
+    $.fieldJobDesc.value    = state.basicInfo.jobDescription || '';
+
+    clearAiResults();
 
     // Employee card in sidebar
     const initials = state.current
@@ -396,9 +419,11 @@ const App = (() => {
   // ── Build payload ─────────────────────────────────────────────────────────────
 
   function buildPayload() {
-    const summary  = $.fieldSummary.value.trim();
-    const role     = $.fieldRole.value.trim();
-    const yearsExp = $.fieldYears.value.trim();
+    const summary        = $.fieldSummary.value.trim();
+    const role           = $.fieldRole.value.trim();
+    const yearsExp       = $.fieldYears.value.trim();
+    const targetRole     = $.fieldTargetRole.value.trim();
+    const jobDescription = $.fieldJobDesc.value.trim();
 
     // Read from project cards (data-idx on each card)
     const projects = [];
@@ -429,7 +454,7 @@ const App = (() => {
       if (name) trainingRows.push({ name, provider, year });
     });
 
-    return { employeeName: state.current, summary, role, yearsExperience: yearsExp, projects, skills, training: trainingRows };
+    return { employeeName: state.current, summary, role, yearsExperience: yearsExp, targetRole, jobDescription, projects, skills, training: trainingRows };
   }
 
   // ── Save draft ────────────────────────────────────────────────────────────────
@@ -484,35 +509,242 @@ const App = (() => {
     }
   }
 
-  // ── AI Professional Summary ───────────────────────────────────────────────────
+  // ── AI Resume Optimizer ────────────────────────────────────────────────────────
+
+  var _optimizingTimer = null;
+
+  function showOptimizingMessage(steps) {
+    var i = 0;
+    showLoading(steps[i] || 'Analyzing Resume…');
+    clearInterval(_optimizingTimer);
+    _optimizingTimer = setInterval(function () {
+      i++;
+      if (i < steps.length) {
+        showLoading(steps[i]);
+      } else {
+        clearInterval(_optimizingTimer);
+        _optimizingTimer = null;
+      }
+    }, 2500);
+  }
+
+  function clearOptimizingMessage() {
+    clearInterval(_optimizingTimer);
+    _optimizingTimer = null;
+  }
+
+  function clearAiResults() {
+    $.aiResults.classList.add('hidden');
+    $.scoreCircle.className = 'score-circle';
+    $.scoreValue.textContent = '0';
+    $.scoreRole.textContent = '';
+    $.strengthsContainer.innerHTML = '';
+    $.improvementsContainer.innerHTML = '';
+    $.experiencesRankingBody.innerHTML = '';
+    $.projectsRankingBody.innerHTML = '';
+    $.skillsRankingBody.innerHTML = '';
+    $.missingSkillsCard.classList.add('hidden');
+    $.missingSkillsList.innerHTML = '';
+    $.atsKeywordsCard.classList.add('hidden');
+    $.atsKeywordsList.innerHTML = '';
+  }
 
   async function generateAiSummary() {
     if (!state.current) return;
 
     const payload = buildPayload();
+    if (!payload.targetRole) {
+      showToast('Please enter an Expected Role before optimizing.', 'warn');
+      $.fieldTargetRole.focus();
+      return;
+    }
+
     if (!payload.projects.length && !payload.skills.length) {
-      showToast('Select at least one project or skill before generating.', 'warn');
+      showToast('Select at least one project or skill before optimizing.', 'warn');
       return;
     }
 
     const btn = $.aiSummaryBtn;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="ai-spinner"></span> Generating…';
+    btn.innerHTML = '<span class="ai-spinner"></span> Optimizing…';
+
+    showOptimizingMessage([
+      'Analyzing Resume…',
+      'Scoring Experiences…',
+      'Scoring Projects…',
+      'Optimizing Projects…',
+      'Generating Summary…',
+    ]);
 
     try {
-      const result = await API.generateProfessionalSummary(payload);
-      if (!result || !result.success || !result.summary) {
-        throw new Error((result && result.error) || 'AI did not return a summary');
+      const result = await API.optimizeResume({
+        employeeName: payload.employeeName,
+        expectedRole: payload.targetRole,
+        jobDescription: payload.jobDescription,
+      });
+
+      if (!result || !result.success) {
+        throw new Error((result && result.error) || 'AI optimization failed');
       }
-      $.fieldSummary.value = result.summary;
-      $.fieldSummary.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Professional summary generated.', 'info');
+
+      var opt = result;
+
+      // Apply project refinements: select top projects, update responsibilities
+      if (opt.projects && opt.projects.length) {
+        var topProjectNames = new Set(opt.projects.map(function (p) { return p.name; }));
+        state.projects.forEach(function (p) {
+          p.selected = topProjectNames.has(p.name);
+          var match = opt.projects.find(function (op) { return op.name === p.name; });
+          if (match && match.refinedResponsibility) {
+            p.responsibility = match.refinedResponsibility;
+          }
+        });
+        renderProjectsTable($.projectSearch.value);
+      }
+
+      // Apply skill refinements: select top skills
+      if (opt.skills && opt.skills.length) {
+        var topSkillsMap = {};
+        opt.skills.forEach(function (s) {
+          var key = (s.category || '') + '|' + (s.skill || '');
+          topSkillsMap[key] = true;
+        });
+        state.skillGroups.forEach(function (g) {
+          g.items.forEach(function (item) {
+            item.selected = !!topSkillsMap[g.category + '|' + item.skill];
+          });
+        });
+        renderSkillsPanel();
+      }
+
+      // Update professional summary
+      if (opt.professionalSummary) {
+        $.fieldSummary.value = opt.professionalSummary;
+        $.fieldSummary.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      updateAllBadges();
+
+      // Render AI results sections
+      renderAiResults(opt);
+
+      showToast('Resume optimized successfully. ' + (opt.projects ? opt.projects.length : 0) + ' projects, ' + (opt.skills ? opt.skills.length : 0) + ' skills selected.', 'info');
+
+      // Scroll to results
+      $.aiResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     } catch (err) {
-      showToast('AI generation failed: ' + err.message, 'error');
+      showToast('AI optimization failed: ' + err.message, 'error');
     } finally {
+      clearOptimizingMessage();
+      hideLoading();
       btn.disabled = false;
       btn.innerHTML = originalHTML;
+    }
+  }
+
+  function renderAiResults(opt) {
+    renderScoreCard(opt);
+    renderExplanation(opt);
+    renderRankings(opt);
+    renderMissingSkills(opt);
+    renderAtsKeywords(opt);
+    $.aiResults.classList.remove('hidden');
+  }
+
+  function renderScoreCard(opt) {
+    var score = opt.resumeMatchScore || 0;
+    $.scoreValue.textContent = score;
+    $.scoreRole.textContent = state.basicInfo.targetRole || '';
+
+    var circle = $.scoreCircle;
+    circle.className = 'score-circle';
+    if (score >= 90) circle.classList.add('score-high');
+    else if (score >= 75) circle.classList.add('score-medium');
+    else circle.classList.add('score-low');
+
+    circle.style.setProperty('--score-pct', score + '%');
+  }
+
+  function renderExplanation(opt) {
+    var strengths = opt.strengths || [];
+    var improvements = opt.improvements || [];
+
+    if (strengths.length) {
+      $.strengthsContainer.innerHTML =
+        '<div class="explanation-group"><div class="explanation-title">Strengths</div>' +
+        strengths.map(function (s) { return '<div class="explanation-item explanation-strength"><i class="ti ti-circle-check"></i> ' + esc(s) + '</div>'; }).join('') +
+        '</div>';
+    } else {
+      $.strengthsContainer.innerHTML = '';
+    }
+
+    if (improvements.length) {
+      $.improvementsContainer.innerHTML =
+        '<div class="explanation-group"><div class="explanation-title">Areas to Improve</div>' +
+        improvements.map(function (s) { return '<div class="explanation-item explanation-improve"><i class="ti ti-alert-triangle"></i> ' + esc(s) + '</div>'; }).join('') +
+        '</div>';
+    } else {
+      $.improvementsContainer.innerHTML = '';
+    }
+  }
+
+  function renderRankings(opt) {
+    // Experiences
+    if (opt.experiences && opt.experiences.length) {
+      $.experiencesRankingBody.innerHTML = opt.experiences.map(function (e) {
+        return rankingRow(e.position + (e.company ? ' at ' + e.company : ''), e.score, e.confidence);
+      }).join('');
+    } else {
+      $.experiencesRankingBody.innerHTML = '<p class="empty-msg" style="padding:8px">No experiences scored.</p>';
+    }
+
+    // Projects
+    if (opt.projects && opt.projects.length) {
+      $.projectsRankingBody.innerHTML = opt.projects.map(function (p) {
+        return rankingRow(p.name, p.score, p.confidence);
+      }).join('');
+    } else {
+      $.projectsRankingBody.innerHTML = '<p class="empty-msg" style="padding:8px">No projects scored.</p>';
+    }
+
+    // Skills
+    if (opt.skills && opt.skills.length) {
+      $.skillsRankingBody.innerHTML = opt.skills.map(function (s) {
+        return rankingRow(s.skill + (s.category ? ' (' + s.category + ')' : ''), s.score, s.confidence);
+      }).join('');
+    } else {
+      $.skillsRankingBody.innerHTML = '<p class="empty-msg" style="padding:8px">No skills scored.</p>';
+    }
+  }
+
+  function rankingRow(label, score, confidence) {
+    var confClass = 'conf-' + (confidence || 'medium');
+    return '<div class="ranking-row">' +
+      '<span class="ranking-label">' + esc(label) + '</span>' +
+      '<span class="ranking-score">' + score + '</span>' +
+      '<span class="ranking-confidence ' + confClass + '">' + esc(confidence || 'medium') + '</span>' +
+      '</div>';
+  }
+
+  function renderMissingSkills(opt) {
+    var skills = opt.missingSkills || [];
+    if (skills.length) {
+      $.missingSkillsList.innerHTML = skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('');
+      $.missingSkillsCard.classList.remove('hidden');
+    } else {
+      $.missingSkillsCard.classList.add('hidden');
+    }
+  }
+
+  function renderAtsKeywords(opt) {
+    var keywords = opt.atsKeywords || [];
+    if (keywords.length && $.fieldJobDesc.value.trim()) {
+      $.atsKeywordsList.innerHTML = keywords.map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join('');
+      $.atsKeywordsCard.classList.remove('hidden');
+    } else {
+      $.atsKeywordsCard.classList.add('hidden');
     }
   }
 
@@ -531,11 +763,21 @@ const App = (() => {
     });
 
     // Basic info
-    [$.fieldSummary, $.fieldRole, $.fieldYears].forEach((el) => {
+    [$.fieldSummary, $.fieldRole, $.fieldYears, $.fieldTargetRole, $.fieldJobDesc].forEach((el) => {
       el.addEventListener('input', () => markDirty());
     });
 
     $.aiSummaryBtn?.addEventListener('click', () => generateAiSummary());
+
+    // Ranking section toggle (event delegation)
+    $.rankingsCard?.addEventListener('click', function (e) {
+      var header = e.target.closest('.ranking-header');
+      if (header) {
+        header.classList.toggle('collapsed');
+        var body = header.nextElementSibling;
+        if (body) body.classList.toggle('hidden');
+      }
+    });
 
     // Project card click — toggle selection without full re-render
     $.projectsTbody.addEventListener('click', (e) => {
@@ -779,6 +1021,8 @@ const App = (() => {
       if (payload.summary != null)         state.basicInfo.summary         = payload.summary;
       if (payload.role != null)            state.basicInfo.role            = payload.role;
       if (payload.yearsExperience != null) state.basicInfo.yearsExperience = payload.yearsExperience;
+      if (payload.targetRole != null)      state.basicInfo.targetRole      = payload.targetRole;
+      if (payload.jobDescription != null)  state.basicInfo.jobDescription  = payload.jobDescription;
 
       if (Array.isArray(payload.projects)) {
         const sel = new Set(payload.projects.map((p) => p.name));
